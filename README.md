@@ -269,28 +269,6 @@ Os diagramas foram revisados para manter as seguintes correspondências:
 - As interfaces dos componentes correspondem às interfaces e aos tratadores do diagrama de classes.
 - Cada componente tem um artefato implantado em algum nó do diagrama de implantação.
 
-## Estrutura do repositório
-
-```
-.
-├── README.md
-├── modelo/
-│   └── sistema-biblioteca.asta        # arquivo-fonte do Astah
-└── docs/
-    └── diagramas/
-        ├── UseCase_Diagram0.png
-        ├── Domain_Diagram0.png
-        ├── Class_Diagram0.png
-        ├── Consultar__Emprestar__Renovar_e_Reservar_livro.png
-        ├── Registrar_devolucao.png
-        ├── Emitir_boleto_de_multa.png
-        ├── Manter_Livro__Pessoa__Estudante_e_Atendente_.png
-        ├── Statemachine_Diagram0.png
-        ├── Cadastros.png
-        ├── AtividadesNaBiblioteca.png
-        ├── Component_Diagram0.png
-        └── Deployment_Diagram0.png
-```
 
 ## Como visualizar e editar
 
