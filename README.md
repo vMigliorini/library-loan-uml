@@ -8,7 +8,8 @@ Este repositório reúne os modelos do sistema sob cinco visões complementares:
 
 ## Sumário
 
-- [Visão geral do sistema](#visão-geral-do-sistema)
+- [O desafio](#o-desafio)
+- [Modelos desenvolvidos](#modelos-desenvolvidos)
 - [Atores e funcionalidades](#atores-e-funcionalidades)
 - [Regras de negócio](#regras-de-negócio)
 - [Diagramas](#diagramas)
@@ -27,17 +28,82 @@ Este repositório reúne os modelos do sistema sob cinco visões complementares:
 
 ---
 
-## Visão geral do sistema
+## O desafio
 
-Uma biblioteca precisa informatizar o processo de empréstimo de livros. O sistema permite que estudantes reservem, peguem emprestado, renovem e devolvam livros, que atendentes registrem devoluções e emitam multas, e que administradores mantenham o acervo e os cadastros de pessoas, estudantes e atendentes.
+A **iB2B**, uma empresa que mantém uma biblioteca, quer informatizar seu processo de empréstimo de livros e contratou uma fabricante de software para construir um sistema que permita **reservar, emprestar e devolver livros**. O sistema deve seguir o paradigma da orientação a objetos e ser documentado em UML.
 
-**Reserva, empréstimo e devolução** são especializações de uma **transação**. Toda transação ocorre em uma data e envolve um livro e dois papéis: um estudante e um atendente. Cada papel é assumido por uma pessoa.
+### O problema
 
-Ao longo de seu ciclo de vida, um livro passa pelos estados:
+**Domínio.** Reserva, empréstimo e devolução são casos particulares de *transação*. Toda transação ocorre em uma data e envolve um **livro** e dois papéis: um **estudante** e um **atendente**, cada um assumido por uma **pessoa**. Todo papel tem um `id`; toda pessoa tem nome, sobrenome e CPF; todo livro tem título, `id` e estado.
 
-```
-LIVRE → RESERVADO → EMPRESTADO → RENOVADO → DEVOLVIDO → LIVRE | REPARANDO → LIVRE | INCINERADO
-```
+**Quem usa o quê.** Cada ator conversa com o sistema por uma classe de entrada (tratador):
+
+- o **Estudante** usa o `TratadorDeEmprestimo`;
+- o **Atendente** usa o `TratadorDeDevolucao`;
+- o **Administrador** usa o `TratadorDeAcervo`, o `TratadorDePessoa`, o `TratadorDeEstudante` e o `TratadorDeAtendente` para manter os cadastros.
+
+**Serviços que o sistema deve oferecer:**
+
+| Ator | Serviços |
+|---|---|
+| Estudante | solicitar reserva (f1), consultar reservas (f2), efetivar empréstimo (f3), renovar empréstimo (f4) |
+| Atendente | registrar devolução (f5), emitir boleto de multa em caso de atraso (f6) |
+| Administrador | manter Livro, Pessoa, Estudante e Atendente (inserir, consultar, atualizar, excluir) |
+
+**Restrições de projeto:**
+
+- Todas as transações passam por um **ponto único de acesso interno**, a `Movimentacao`. Os cadastros de pessoas, estudantes e atendentes passam pelo `Relacionamento`. Em ambos os casos, as associações internas são distintas.
+- A comunicação entre os tratadores e `Relacionamento`, `Acervo` e `Movimentacao` é feita por **delegação**.
+- Cada funcionalidade "manter" é definida por uma **interface** (`iLivro`, `iPessoa`, `iEstudante`, `iAtendente`), implementada pelo tratador correspondente.
+- Um estudante ou atendente só pode ser cadastrado se a **pessoa** associada já estiver cadastrada.
+
+**Dinâmica de uso.** O estudante reserva um livro e depois efetiva o empréstimo. O atendente entrega o livro, o estudante pode renová-lo e, no fim, devolve ao atendente, que registra a devolução. Se houver atraso, o atendente solicita a multa de **R$ 1,00 por dia** e o boleto é enviado ao estudante por e-mail.
+
+**Ciclo de vida do livro.** Além de livre, reservado e emprestado, o livro pode ser **renovado**, **devolvido**, **reparando** ou **incinerado**. Após a devolução, o livro passa por uma **inspeção** antes de voltar a ficar livre: se estiver danificado, vai para reparo, e se o reparo for inviável, é incinerado.
+
+**Organização em departamentos.** Cada informação é registrada em um departamento específico:
+
+| Departamento | Responsável por |
+|---|---|
+| **Acadêmico** | estudantes |
+| **RH** | pessoas e atendentes |
+| **Biblioteca** | livros, reservas, empréstimos, renovações e devoluções |
+| **Financeiro** | multas e boletos |
+| **Banco** *(externo)* | recebimento do pagamento e informe de quitação |
+
+O Financeiro identifica o estudante pelo CPF, emite o boleto bancário e o envia por e-mail. O estudante paga no Banco, que informa a quitação ao Financeiro, e este registra a multa como quitada.
+
+**Infraestrutura.** O usuário acessa o sistema por um navegador, via HTTPS. A lógica de negócio roda em um servidor Ubuntu, sobre JVM e Tomcat. Os dados ficam em um **MySQL** (principal, Windows 10) com um **Oracle** (espelho, Ubuntu) em servidores distintos, ambos Dell Edge 3600.
+
+### O que precisava ser modelado
+
+- as classes, os atributos, os relacionamentos (generalização, associação, agregação), seus nomes, papéis e multiplicidades;
+- as funcionalidades do sistema e a classe responsável por cada uma;
+- os casos de uso, seus relacionamentos e os atores;
+- a colaboração entre objetos em cada caso de uso;
+- os estados do livro e o que provoca cada mudança;
+- o fluxo de atividades entre atores e departamentos, do cadastro à quitação da multa;
+- a divisão do sistema em componentes e suas interfaces;
+- a implantação em nós físicos e ambientes de execução.
+
+---
+
+## Modelos desenvolvidos
+
+Cada pergunta do desafio foi respondida por um modelo UML. Todos usam os mesmos nomes de classes, interfaces, operações e estados.
+
+| Pergunta | Modelo | Seção |
+|---|---|---|
+| Quem usa o sistema e o que cada ator pode fazer? | **Casos de uso** | [1](#1-casos-de-uso) |
+| Quais são os conceitos do problema e como se relacionam? | **Domínio** | [2](#2-domínio-e-classes-de-projeto) |
+| Quais classes, atributos, operações e interfaces compõem a solução? | **Classes de projeto** | [2](#2-domínio-e-classes-de-projeto) |
+| Como os objetos colaboram em cada funcionalidade? | **Sequência** (4 diagramas) | [3](#3-sequência) |
+| Quais estados um livro assume e o que provoca cada mudança? | **Estados** | [4](#4-estados-do-livro) |
+| Como atores e departamentos colaboram, do cadastro à quitação da multa? | **Atividades** (2 diagramas) | [5](#5-atividades) |
+| Em quais componentes o sistema se divide e que interfaces cada um fornece e requer? | **Componentes** | [6](#6-componentes) |
+| Onde cada parte roda e como os nós se comunicam? | **Implantação** | [7](#7-implantação) |
+
+---
 
 ## Atores e funcionalidades
 
